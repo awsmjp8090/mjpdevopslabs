@@ -12,7 +12,11 @@ module "vpc" {
   public_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
   private_subnets = ["10.0.3.0/24", "10.0.4.0/24"]
   enable_nat_gateway = true
-  enable_dns_hostnames = true  
+  enable_dns_hostnames = true
+  tags = {
+    Terraform = "true"
+    Environment = "prod"
+  }
 }
 
 # IAM Role for EKS
@@ -20,6 +24,10 @@ resource "aws_iam_role" "eks_cluster_role" {
   name = "eks-cluster-role"
 
   assume_role_policy = data.aws_iam_policy_document.eks_assume_role_policy.json
+  tags = {
+    Terraform = "true"
+    Environment = "prod"
+  }
 }
 
 data "aws_iam_policy_document" "eks_assume_role_policy" {
@@ -36,6 +44,10 @@ data "aws_iam_policy_document" "eks_assume_role_policy" {
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  tags = {
+    Terraform = "true"
+    Environment = "prod"
+  }  
 }
 
 resource "aws_eks_cluster" "eks_cluster" {
@@ -45,6 +57,10 @@ resource "aws_eks_cluster" "eks_cluster" {
   vpc_config {
     subnet_ids = module.vpc.private_subnets
   }
+  tags = {
+    Terraform = "true"
+    Environment = "prod"
+  }  
 }
 
 # Node group for worker nodes
@@ -59,7 +75,10 @@ resource "aws_eks_node_group" "eks_worker_nodes" {
     max_size     = 4
     min_size     = 1
   }
-
+  tags = {
+    Terraform = "true"
+    Environment = "prod"
+  }
   instance_types = ["t3.medium"]
 
   depends_on = [aws_eks_cluster.eks_cluster]
@@ -68,7 +87,10 @@ resource "aws_eks_node_group" "eks_worker_nodes" {
 # IAM Role for Worker Nodes
 resource "aws_iam_role" "eks_worker_node_role" {
   name = "eks-worker-node-role"
-
+  tags = {
+    Terraform = "true"
+    Environment = "prod"
+  }
   assume_role_policy = data.aws_iam_policy_document.eks_worker_node_assume_role_policy.json
 }
 
@@ -86,9 +108,17 @@ data "aws_iam_policy_document" "eks_worker_node_assume_role_policy" {
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   role       = aws_iam_role.eks_worker_node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  tags = {
+    Terraform = "true"
+    Environment = "prod"
+  }  
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
   role       = aws_iam_role.eks_worker_node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  tags = {
+    Terraform = "true"
+    Environment = "prod"
+  }  
 }
