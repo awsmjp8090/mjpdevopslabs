@@ -1,0 +1,16 @@
+---
+- hosts: k8s_worker
+  become: yes
+  tasks:
+    - name: Install Docker
+      apt: 
+        name: docker.io
+        state: present
+
+    - name: Install Kubernetes packages
+      apt:
+        name: ['kubeadm', 'kubelet', 'kubectl']
+        state: present
+
+    - name: Join worker nodes to Kubernetes cluster
+      shell: kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash <hash>
