@@ -44,10 +44,6 @@ data "aws_iam_policy_document" "eks_assume_role_policy" {
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  tags = {
-    Terraform = "true"
-    Environment = "prod"
-  }  
 }
 
 resource "aws_eks_cluster" "eks_cluster" {
@@ -108,17 +104,9 @@ data "aws_iam_policy_document" "eks_worker_node_assume_role_policy" {
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   role       = aws_iam_role.eks_worker_node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  tags = {
-    Terraform = "true"
-    Environment = "prod"
-  }  
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
   role       = aws_iam_role.eks_worker_node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  tags = {
-    Terraform = "true"
-    Environment = "prod"
-  }  
 }
