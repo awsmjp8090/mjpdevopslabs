@@ -32,10 +32,36 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Store SSH key as an artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ssh-private-key
           path: id_rsa
+
+  ansible:
+    name: Configure Servers with Ansible
+    runs-on: ubuntu-latest
+    needs: terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      - name: Download SSH key artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ssh-private-key
+
+      - name: Set permissions on the SSH private key
+        run: |
+          chmod 600 id_rsa
+          mv id_rsa ~/.ssh/id_rsa
+
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i ansible/inventory/hosts ansible/playbook.yml
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: 'False'       
 
   docker:
     name: Build and Push Docker Images to ECR
