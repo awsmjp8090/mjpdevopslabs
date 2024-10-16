@@ -1,9 +1,7 @@
-# AWS Provider
 provider "aws" {
-  region = "us-east-1" # Use your preferred region
+  region = "us-east-1"
 }
 
-# Create a VPC for the EKS Cluster
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   name    = "eks-vpc"
@@ -15,18 +13,16 @@ module "vpc" {
   enable_nat_gateway = true
   enable_dns_hostnames = true
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "prod"
   }
 }
 
-# IAM Role for EKS Cluster
 resource "aws_iam_role" "eks_cluster_role" {
-  name = "eks-cluster-role"
-
+  name               = "eks-cluster-role"
   assume_role_policy = data.aws_iam_policy_document.eks_assume_role_policy.json
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "prod"
   }
 }
@@ -35,19 +31,17 @@ data "aws_iam_policy_document" "eks_assume_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["eks.amazonaws.com"]
     }
   }
 }
 
-# Attach the EKS Cluster Policy to the IAM Role
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-# Create EKS Cluster
 resource "aws_eks_cluster" "eks_cluster" {
   name     = "eks-cluster"
   role_arn = aws_iam_role.eks_cluster_role.arn
@@ -57,18 +51,16 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "prod"
   }
 }
 
-# IAM Role for EKS Worker Nodes
 resource "aws_iam_role" "eks_worker_node_role" {
-  name = "eks-worker-node-role"
-
+  name               = "eks-worker-node-role"
   assume_role_policy = data.aws_iam_policy_document.eks_worker_node_assume_role_policy.json
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "prod"
   }
 }
@@ -77,7 +69,7 @@ data "aws_iam_policy_document" "eks_worker_node_assume_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["ec2.amazonaws.com"]
     }
   }
@@ -93,7 +85,6 @@ resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
-# Create EKS Node Group (Managed Node Group)
 resource "aws_eks_node_group" "eks_worker_nodes" {
   cluster_name    = aws_eks_cluster.eks_cluster.name
   node_group_name = "eks-node-group"
@@ -108,10 +99,10 @@ resource "aws_eks_node_group" "eks_worker_nodes" {
 
   instance_types = ["t3.medium"]
 
+  depends_on = [aws_eks_cluster.eks_cluster]
+
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "prod"
   }
-
-  depends_on = [aws_eks_cluster.eks_cluster]
 }

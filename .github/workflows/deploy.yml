@@ -26,7 +26,6 @@ jobs:
       - name: Apply Terraform Plan
         run: |
           terraform apply -auto-approve
-          # Save the generated private key to a file
           echo "$(terraform output -raw private_key_pem)" > id_rsa
         working-directory: ./terraform
         env:
@@ -35,12 +34,11 @@ jobs:
 
       - name: Rollback (Destroy Resources) if Apply Fails
         if: failure()
-        run: |
-          terraform destroy -auto-approve
+        run: terraform destroy -auto-approve
         working-directory: ./terraform
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}          
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Store SSH key as an artifact
         uses: actions/upload-artifact@v4
@@ -72,7 +70,7 @@ jobs:
       - name: Run Ansible Playbook
         run: ansible-playbook -i ansible/inventory/hosts ansible/playbook.yml
         env:
-          ANSIBLE_HOST_KEY_CHECKING: 'False'       
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
 
   docker:
     name: Build and Push Docker Images to ECR
