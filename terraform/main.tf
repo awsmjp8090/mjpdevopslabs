@@ -163,3 +163,43 @@ output "private_key_pem" {
   value       = tls_private_key.my_key.private_key_pem
   sensitive   = true
 }
+
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = "my-terraform-state-bucket"
+  acl    = "private"
+
+  versioning {
+    enabled = true
+  }
+
+  tags = {
+    Name        = "Terraform State Bucket"
+    Environment = "prod"
+  }
+}
+
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "terraform-locks"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "Terraform Locks"
+    Environment = "prod"
+  }
+}
+
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state-bucket"
+    key            = "devopslabs/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
