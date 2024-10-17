@@ -190,8 +190,6 @@ resource "aws_dynamodb_table" "terraform_locks" {
     type = "S"
   }
 
-  depends_on = [aws_s3_bucket.terraform_state]
-
   tags = {
     Name        = "Terraform Locks"
     Environment = "prod"
@@ -207,7 +205,4 @@ terraform {
     dynamodb_table = "terraform-locks"
     encrypt        = true
   }
-
-  depends_on = [aws_s3_bucket.terraform_state]
-
 }
