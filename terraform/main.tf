@@ -164,6 +164,7 @@ output "private_key_pem" {
   sensitive   = true
 }
 
+# Create S3 Bucket for Terraform State
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "my-terraform-state-bucket"
   acl    = "private"
@@ -178,6 +179,7 @@ resource "aws_s3_bucket" "terraform_state" {
   }
 }
 
+# Create DynamoDB Table for Terraform Locks
 resource "aws_dynamodb_table" "terraform_locks" {
   name         = "terraform-locks"
   billing_mode = "PAY_PER_REQUEST"
@@ -188,12 +190,15 @@ resource "aws_dynamodb_table" "terraform_locks" {
     type = "S"
   }
 
+  depends_on = [aws_s3_bucket.terraform_state]
+
   tags = {
     Name        = "Terraform Locks"
     Environment = "prod"
   }
 }
 
+# Terraform Backend Configuration
 terraform {
   backend "s3" {
     bucket         = "my-terraform-state-bucket"
@@ -202,4 +207,7 @@ terraform {
     dynamodb_table = "terraform-locks"
     encrypt        = true
   }
+
+  depends_on = [aws_s3_bucket.terraform_state]
+
 }
