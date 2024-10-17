@@ -18,6 +18,31 @@ module "vpc" {
   }
 }
 
+# Security Group for Worker Nodes
+resource "aws_security_group" "eks_worker_sg" {
+  vpc_id = module.vpc.vpc_id
+  name   = "eks-worker-sg"
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Terraform   = "true"
+    Environment = "prod"
+  }
+}
+
 resource "aws_iam_role" "eks_cluster_role" {
   name               = "eks-cluster-role"
   assume_role_policy = data.aws_iam_policy_document.eks_assume_role_policy.json
@@ -48,6 +73,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 
   vpc_config {
     subnet_ids = module.vpc.private_subnets
+    security_group_ids = [aws_security_group.eks_worker_sg.id]
   }
 
   tags = {
@@ -83,6 +109,11 @@ resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
   role       = aws_iam_role.eks_worker_node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_ecr_read_policy" {
+  role       = aws_iam_role.eks_worker_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 resource "aws_eks_node_group" "eks_worker_nodes" {
