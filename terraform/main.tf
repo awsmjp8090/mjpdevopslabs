@@ -146,15 +146,20 @@ resource "aws_eks_node_group" "eks_worker_nodes" {
   }
 }
 
-# Create EC2 Key Pair
+# Create EC2 Key Pair using Terraform
+resource "tls_private_key" "my_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
 resource "aws_key_pair" "my_key_pair" {
   key_name   = "my-key-pair"
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = tls_private_key.my_key.public_key_openssh
 }
 
 # Output the private key for SSH
 output "private_key_pem" {
   description = "The private key for SSH access"
-  value       = aws_key_pair.my_key_pair.private_key_pem
+  value       = tls_private_key.my_key.private_key_pem
   sensitive   = true
 }
