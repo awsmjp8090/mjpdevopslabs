@@ -1,7 +1,9 @@
+# AWS Provider
 provider "aws" {
   region = "us-east-1"
 }
 
+# Create a VPC for the EKS Cluster
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   name    = "eks-vpc"
@@ -43,6 +45,7 @@ resource "aws_security_group" "eks_worker_sg" {
   }
 }
 
+# IAM Role for EKS Cluster
 resource "aws_iam_role" "eks_cluster_role" {
   name               = "eks-cluster-role"
   assume_role_policy = data.aws_iam_policy_document.eks_assume_role_policy.json
@@ -62,17 +65,19 @@ data "aws_iam_policy_document" "eks_assume_role_policy" {
   }
 }
 
+# Attach the EKS Cluster Policy to the IAM Role
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
+# Create EKS Cluster
 resource "aws_eks_cluster" "eks_cluster" {
   name     = "eks-cluster"
   role_arn = aws_iam_role.eks_cluster_role.arn
 
   vpc_config {
-    subnet_ids = module.vpc.private_subnets
+    subnet_ids         = module.vpc.private_subnets
     security_group_ids = [aws_security_group.eks_worker_sg.id]
   }
 
@@ -82,6 +87,7 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 }
 
+# IAM Role for EKS Worker Nodes
 resource "aws_iam_role" "eks_worker_node_role" {
   name               = "eks-worker-node-role"
   assume_role_policy = data.aws_iam_policy_document.eks_worker_node_assume_role_policy.json
@@ -101,6 +107,7 @@ data "aws_iam_policy_document" "eks_worker_node_assume_role_policy" {
   }
 }
 
+# Attach the EKS Worker Node Policies to the IAM Role
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   role       = aws_iam_role.eks_worker_node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
@@ -116,6 +123,7 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_read_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+# Create EKS Node Group (Managed Node Group)
 resource "aws_eks_node_group" "eks_worker_nodes" {
   cluster_name    = aws_eks_cluster.eks_cluster.name
   node_group_name = "eks-node-group"
@@ -136,4 +144,17 @@ resource "aws_eks_node_group" "eks_worker_nodes" {
     Terraform   = "true"
     Environment = "prod"
   }
+}
+
+# Create EC2 Key Pair
+resource "aws_key_pair" "my_key_pair" {
+  key_name   = "my-key-pair"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+# Output the private key for SSH
+output "private_key_pem" {
+  description = "The private key for SSH access"
+  value       = aws_key_pair.my_key_pair.private_key_pem
+  sensitive   = true
 }

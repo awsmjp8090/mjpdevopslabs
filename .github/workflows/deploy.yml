@@ -26,11 +26,25 @@ jobs:
       - name: Apply Terraform Plan
         run: |
           terraform apply -auto-approve
-          echo "$(terraform output -raw private_key_pem)" > id_rsa
+          PRIVATE_KEY=$(terraform output -raw private_key_pem || echo "")
+          if [ -z "$PRIVATE_KEY" ]; then
+            echo "Error: private_key_pem not found. Exiting."
+            exit 1
+          else
+            echo "$PRIVATE_KEY" > id_rsa
+            chmod 600 id_rsa
+          fi
         working-directory: ./terraform
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Store SSH key as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssh-private-key
+          path: ./terraform/id_rsa
+          if-no-files-found: error
 
       - name: Rollback (Destroy Resources) if Apply Fails
         if: failure()
